@@ -5,6 +5,11 @@ Hello all
 I've created repository and I'm going to start sharing some scripts that I like to make and that help me in my day-to-day life as a DBA.
 
 But some considerations are important:
+<<<<<<< HEAD
+=======
+
+	1) Some scripts are a compilation of several other scripts I've created. 
+>>>>>>> 406515c (Initial version.)
 	
 	1) Some scripts are a compilation of several other scripts I've created. 
  
