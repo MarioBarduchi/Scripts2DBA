@@ -3,14 +3,15 @@
 --#/* Autor                     : Mario Barduchi                                         */
 --#/* E-mail                    : mario.barduchi@gmail.com                               */
 --#/* Data                      : 03/02/2025                                             */
---#/* Original                  : Nao ha                                                 */
---#/* Descricao                 : SGA information                                        */
---#/* Localizacao               : /home/oracle/DBA/sql                                   */
---#/* Reponsabilidade           : DBA                                                    */
---#/* Parametros Externos       :                                                        */
---#/* Alteracoes Efetuadas      :                                                        */
---#/* Observacoes               :                                                        */
---#/**************************************************************************************/
+--#/* Original                  : None                                                   */
+--#/* Description               : Configurations - SQL*Plus                              */
+--#/* Location                  : /home/oracle/SCRIPTS2DBA                               */
+--#/* Responsibility            : DBA                                                    */
+--#/* External Parameters       :                                                        */
+--#/* Changes Made              :                                                        */
+--#/* Observations              :                                                        */
+--#/*************************************************************************************/
+@../CONFSQL/confsql.sql
 SET FEEDBACK OFF
 
 prompt
