@@ -5,8 +5,9 @@ Hello all
 I've created repository and I'm going to start sharing some scripts that I like to make and that help me in my day-to-day life as a DBA.
 
 But some considerations are important:
-	1) Some scripts are a compilation of several other scripts I've created. 
 	
+	1) Some scripts are a compilation of several other scripts I've created. 
+ 
 	2) Some scripts are based on and adapted from existing scripts. Those that I found reference to the author I obviously identify in the script.
 	
 	3) So, if there's a script that you're the author of and I've adapted to my reality and it's not mentioned, please let me know and I'll be happy to reference it.
