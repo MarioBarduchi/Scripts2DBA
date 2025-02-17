@@ -80,67 +80,47 @@ select *
    select v.sql_id,
           v.plan_hash_value,
           v.executions,
-          round(
-             v.elapsed_time / 1e6,
-             2
-          ) as elapsed_time_sec,
-          round(
-             v.elapsed_time / 1e6 / 60,
-             2
-          ) as elapsed_time_min,
-          round(
-             v.elapsed_time / 1e6 / 3600,
-             2
-          ) as elapsed_time_hr,
-          round(
-             v.cpu_time / 1e6,
-             2
-          ) as cpu_time_sec,
+          round(v.elapsed_time / 1e6,2)         as elapsed_time_sec,
+          round(v.elapsed_time / 1e6 / 60,2)    as elapsed_time_min,
+          round(v.elapsed_time / 1e6 / 3600,2)  as elapsed_time_hr,
+          round(v.cpu_time / 1e6,2)             as cpu_time_sec,
           v.buffer_gets,
           v.disk_reads,
           v.rows_processed,
           (
              select count(distinct plan_hash_value)
-               from v$sql
-              where sql_id = v.sql_id
+             from v$sql
+             where sql_id = v.sql_id
           ) as plan_count,
           (
              select count(*)
-               from v$sql
-              where sql_id = v.sql_id
+             from v$sql
+             where sql_id = v.sql_id
           ) as child_cursors,
           case
-             when round(
-                v.elapsed_time / 1e6,
-                2
-             ) > 200000                 then
-                'Elapsed Time > 200,000s accumulated.'
-             when v.buffer_gets > 1000000000 then
-                'Buffer Gets > 1 Billion accumulated.'
-             when v.disk_reads > 100000000   then
-                'Disk Reads > 100 Million accumulated.'
+             when round(v.elapsed_time / 1e6,2) > 200000    then 'Elapsed Time > 200,000s accumulated.'
+             when v.buffer_gets > 1000000000                then  'Buffer Gets > 1 Billion accumulated.'
+             when v.disk_reads > 100000000                  then  'Disk Reads > 100 Million accumulated.'
+             when (
+                select count(*) 
+                from v$sql
+                where sql_id = v.sql_id
+             ) between 11 and 50                            then 'Child Cursors between 11 and 50! Excessive parsing may occur.'
              when (
                 select count(*)
-                  from v$sql
-                 where sql_id = v.sql_id
-             ) between 11 and 50        then
-                'Child Cursors between 11 and 50! Excessive parsing may occur.'
-             when (
-                select count(*)
-                  from v$sql
-                 where sql_id = v.sql_id
-             ) > 50                     then
-                'Child Cursors > 50! Possible contention in the Shared Pool.'
+                from v$sql
+                where sql_id = v.sql_id
+             ) > 50                                         then 'Child Cursors > 50! Possible contention in the Shared Pool.'
              else
-                ''
+             ''
           end as attention
-     from v$sql v
-    where v.plan_hash_value > 0 
-    order by v.cpu_time desc
+   from v$sql v
+   where v.plan_hash_value > 0 
+   order by v.cpu_time desc
 )
- where rownum <= 30;
+where rownum <= 30;
 
-   SET SERVEROUTPUT ON
+SET SERVEROUTPUT ON
 PROMPT
 ACCEPT sql_id CHAR PROMPT 'Do you want to see details of any SQL_ID? (Press Enter to finish): '
 
@@ -155,18 +135,7 @@ begin
       dbms_output.put_line('============================================');
       dbms_output.put_line('Execution Plans for SQL_ID: ' || v_sql_id);
       dbms_output.put_line('============================================');
-      dbms_output.put_line(rpad(
-         'Plan Hash Value',
-         20
-      )
-                           || rpad(
-         'Avg Elapsed Time (s)',
-         25
-      )
-                           || rpad(
-         'Status',
-         25
-      ));
+      dbms_output.put_line(rpad('Plan Hash Value',20) || rpad('Avg Elapsed Time (s)',25) || rpad('Status',25));
       dbms_output.put_line('------------------- ------------------------ ---------------------');
       for rec in (
          with p as (
@@ -199,91 +168,38 @@ begin
              where sql_id = v_sql_id
          )
          select p.plan_hash_value,
-                round(
-                   nvl(
-                      m.avg_et_secs,
-                      a.avg_et_secs
-                   ) / 1e6,
-                   3
-                ) avg_et_secs,
+                round(nvl(m.avg_et_secs,a.avg_et_secs) / 1e6,3) as avg_et_secs,
                 case
-                   when p.plan_hash_value in (
-                      select plan_hash_value
-                        from active_plans
-                   ) then
-                      'Active'
-                   else
-                      'Historical Execution Plan'
-                end as status
-           from p
-           left join m
-         on p.plan_hash_value = m.plan_hash_value
-           left join a
-         on p.plan_hash_value = a.plan_hash_value
+                when p.plan_hash_value in (
+                     select plan_hash_value
+                     from active_plans
+                ) then 'Active'
+                else   'Historical Execution Plan'
+          end as status
+          from p
+          left join m on p.plan_hash_value = m.plan_hash_value
+          left join a on p.plan_hash_value = a.plan_hash_value
           order by status,
-                   avg_et_secs nulls last
+          avg_et_secs nulls last
       ) loop
-         dbms_output.put_line(rpad(
-            rec.plan_hash_value,
-            20
-         )
-                              || rpad(
-            nvl(
-               to_char(
-                  rec.avg_et_secs,
-                  '999,999,999.999'
-               ),
-               '                         '
-            ),
-            25
-         )
-                              || rpad(
-            nvl(
-               rec.status,
-               ' '
-            ),
-            25
-         ));
+         dbms_output.put_line(rpad(rec.plan_hash_value,20) || rpad(nvl(to_char(rec.avg_et_secs,'999,999,999.999'),'                         '),25) || rpad(nvl(rec.status,' '),25));
       end loop;
 
       dbms_output.put_line(chr(10));
       dbms_output.put_line('============================================');
       dbms_output.put_line(' Child Cursors for SQL_ID: ' || v_sql_id);
       dbms_output.put_line('============================================');
-      dbms_output.put_line(rpad(
-         'Child Number',
-         18
-      )
-                           || rpad(
-         'Reason',
-         50
-      ));
+      dbms_output.put_line(rpad('Child Number', 18) || rpad('Reason', 50));
       dbms_output.put_line('----------------- ------------------------------------------------');
+      
       for rec2 in (
          select s.child_number,
-                regexp_substr(
-                   to_clob(s.reason),
-                   '<reason>(.*?)</reason>',
-                   1,
-                   1,
-                   null,
-                   1
-                ) as clean_reason
-           from v$sql_shared_cursor s
-          where s.sql_id = v_sql_id
-          order by s.child_number
+                regexp_substr(to_clob(s.reason), '<reason>(.*?)</reason>', 1, 1, null, 1 ) as clean_reason
+         from v$sql_shared_cursor s
+         where s.sql_id = v_sql_id
+         order by s.child_number
       ) loop
-         dbms_output.put_line(rpad(
-            to_char(
-               rec2.child_number,
-               '999'
-            ),
-            21
-         )
-                              || rpad(
-            rec2.clean_reason,
-            50
-         ));
+         dbms_output.put_line(rpad(to_char(rec2.child_number,'999'),21) || rpad(rec2.clean_reason,50));
       end loop;
    end if;
 end;
